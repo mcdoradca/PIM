@@ -1,39 +1,21 @@
-Core Framework
-
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 pydantic==2.6.0
 pydantic-settings==2.1.0
-
-Database & ORM
-
 sqlalchemy==2.0.25
-psycopg2-binary==2.9.9  # Sterownik PostgreSQL
-alembic==1.13.1         # Migracje bazy danych
-
-Image Processing (Agent Wizualny)
-
-Pillow==10.2.0          # Przetwarzanie obrazów
-numpy==1.26.3           # Obliczenia macierzowe dla obrazów (opcjonalnie potrzebne przy zaawansowanych filtrach)
-
-Data Processing (Agent Ingestii)
-
+psycopg2-binary==2.9.9
+alembic==1.13.1
+Pillow==10.2.0
+numpy==1.26.3
 pandas==2.2.0
-openpyxl==3.1.2         # Obsługa Excela
-python-multipart==0.0.6 # Obsługa uploadu plików
-
-Asynchronous Tasks & Caching (Celery/Redis)
-
+openpyxl==3.1.2
+python-multipart==0.0.6
 celery==5.3.6
 redis==5.0.1
-
-External APIs & Storage
-
-PyGithub==2.1.1         # Integracja z GitHub
+google-api-python-client==2.116.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
 requests==2.31.0
 httpx==0.26.0
-
-Utilities
-
-python-jose[cryptography]==3.3.0 # Tokeny JWT
-passlib[bcrypt]==1.7.4  # Haszowanie haseł
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
