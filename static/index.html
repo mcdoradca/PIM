@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise PIM Dashboard</title>
+    <!-- Style Tailwind CSS (Szybki wygląd) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Framework Vue.js (Logika interfejsu) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Ikony -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #f3f4f6; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col">
+        
+        <!-- Nagłówek -->
+        <nav class="bg-slate-800 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-layer-group text-2xl text-blue-400"></i>
+                    <span class="text-xl font-bold tracking-wider">AI PIM <span class="text-blue-400">ENTERPRISE</span></span>
+                </div>
+                <div class="text-sm text-gray-400">
+                    Zalogowany jako: Marketing Manager
+                </div>
+            </div>
+        </nav>
+
+        <!-- Główna zawartość -->
+        <main class="flex-grow container mx-auto px-4 py-8">
+            
+            <!-- Pasek akcji -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-semibold text-gray-800">Katalog Produktów</h1>
+                <button @click="showAddModal = true" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Dodaj Produkt
+                </button>
+            </div>
+
+            <!-- Lista Produktów (Grid) -->
+            <div v-if="loading" class="text-center py-10 text-gray-500">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>Ładowanie bazy danych...
+            </div>
+
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Karta Produktu -->
+                <div v-for="product in products" :key="product.id" class="bg-white rounded-xl shadow-sm hover:shadow-md transition duration-200 border border-gray-100 overflow-hidden">
+                    
+                    <!-- Zdjęcie / Placeholder -->
+                    <div class="h-48 bg-gray-100 flex items-center justify-center relative group">
+                        <img v-if="product.image_url" :src="product.image_url" class="h-full w-full object-cover">
+                        <div v-else class="text-gray-400 flex flex-col items-center">
+                            <i class="fa-regular fa-image text-4xl mb-2"></i>
+                            <span class="text-sm">Brak zdjęcia</span>
+                        </div>
+                        
+                        <!-- Overlay do uploadu -->
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200">
+                            <label class="cursor-pointer bg-white text-gray-800 px-4 py-2 rounded-full font-medium hover:bg-gray-100">
+                                <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Zmień zdjęcie
+                                <input type="file" class="hidden" @change="uploadImage($event, product.sku)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Dane -->
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800 truncate" :title="product.name">{{ product.name }}</h3>
+                            <span :class="{'bg-green-100 text-green-700': product.status === 'APPROVED', 'bg-yellow-100 text-yellow-700': product.status === 'DRAFT'}" class="text-xs px-2 py-1 rounded-full font-semibold">
+                                {{ product.status }}
+                            </span>
+                        </div>
+                        <div class="text-sm text-gray-500 mb-4 space-y-1">
+                            <p><span class="font-medium">SKU:</span> {{ product.sku }}</p>
+                            <p><span class="font-medium">EAN:</span> {{ product.ean }}</p>
+                        </div>
+
+                        <!-- Przyciski akcji -->
+                        <div class="flex gap-2 border-t pt-4">
+                            <button @click="syndicate(product.sku, 'ROSSMANN_PL')" class="flex-1 bg-red-50 text-red-600 hover:bg-red-100 py-2 rounded text-sm font-medium transition">
+                                <i class="fa-solid fa-share-nodes"></i> Rossmann
+                            </button>
+                            <button class="flex-1 bg-gray-50 text-gray-600 hover:bg-gray-100 py-2 rounded text-sm font-medium transition">
+                                <i class="fa-solid fa-pen"></i> Edytuj
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal Dodawania Produktu -->
+        <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Nowy Produkt</h2>
+                <form @submit.prevent="addProduct">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nazwa Produktu</label>
+                            <input v-model="newProduct.name" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-50 p-2 border">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">SKU</label>
+                                <input v-model="newProduct.sku" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 p-2 border">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">EAN</label>
+                                <input v-model="newProduct.ean" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 p-2 border">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Skład INCI (Opcjonalne)</label>
+                            <textarea v-model="newProduct.attributes.inci_composition" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 p-2 border" placeholder="Aqua, Sodium Laureth Sulfate..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" @click="showAddModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Anuluj</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Zapisz Produkt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue
+
+        createApp({
+            setup() {
+                const products = ref([])
+                const loading = ref(true)
+                const showAddModal = ref(false)
+                
+                const newProduct = ref({
+                    name: '', sku: '', ean: '', 
+                    attributes: { inci_composition: '' },
+                    packaging: []
+                })
+
+                // Pobieranie produktów z API
+                const fetchProducts = async () => {
+                    loading.value = true
+                    try {
+                        const res = await fetch('/api/products')
+                        products.value = await res.json()
+                    } catch (e) {
+                        console.error("Błąd pobierania:", e)
+                    } finally {
+                        loading.value = false
+                    }
+                }
+
+                // Dodawanie produktu
+                const addProduct = async () => {
+                    try {
+                        const res = await fetch('/products/onboard', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newProduct.value)
+                        })
+                        if (res.ok) {
+                            showAddModal.value = false
+                            fetchProducts() // Odśwież listę
+                            // Reset formularza
+                            newProduct.value = { name: '', sku: '', ean: '', attributes: { inci_composition: '' }, packaging: [] }
+                        } else {
+                            alert("Błąd: SKU prawdopodobnie już istnieje!")
+                        }
+                    } catch (e) {
+                        alert("Błąd połączenia z serwerem")
+                    }
+                }
+
+                // Upload zdjęcia
+                const uploadImage = async (event, sku) => {
+                    const file = event.target.files[0]
+                    if (!file) return
+
+                    const formData = new FormData()
+                    formData.append('file', file)
+
+                    try {
+                        // Tutaj wywołujemy Twój backend Enterprise
+                        const res = await fetch(`/api/images/${sku}`, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        if (res.ok) {
+                            fetchProducts() // Odśwież, żeby zobaczyć zdjęcie
+                        }
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+
+                // Weryfikacja dla Rossmanna
+                const syndicate = async (sku, channel) => {
+                    try {
+                        const res = await fetch(`/products/${sku}/syndicate/${channel}`, { method: 'POST' })
+                        const data = await res.json()
+                        
+                        if (data.status === 'BLOCKED') {
+                            alert(`⛔ BLOKADA JAKOŚCI DANYCH:\n\n${data.errors.join('\n')}`)
+                        } else {
+                            alert(`✅ SUKCES:\n${data.message}`)
+                        }
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+
+                onMounted(() => {
+                    fetchProducts()
+                })
+
+                return {
+                    products, loading, showAddModal, newProduct,
+                    addProduct, uploadImage, syndicate
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
