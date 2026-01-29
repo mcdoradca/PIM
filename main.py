@@ -311,4 +311,5 @@ async def syndicate_product(sku: str, channel: ChannelType, db: Session = Depend
 if __name__ == "__main__":
     # To tylko dla testów lokalnych
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
