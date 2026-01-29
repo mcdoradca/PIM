@@ -20,12 +20,6 @@ from sqlalchemy import create_engine, Column, String, DateTime, Float
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
-# Importy naszych agentów (jeśli pliki istnieją w repozytorium)
-# Jeśli nie masz jeszcze folderu agents z __init__.py, te importy mogą wymagać dostosowania
-# Dla uproszczenia w tym pliku, zakładamy strukturę płaską lub zakomentujemy importy zewnętrzne
-# from agents.google_drive import GoogleDriveAdapter
-# from agents.visual import ImageStandardizer
-
 # --- KONFIGURACJA LOGOWANIA ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("EnterprisePIM")
@@ -100,9 +94,8 @@ def get_db():
 app = FastAPI(title="Enterprise AI PIM")
 
 # Montowanie plików statycznych (Frontend)
-# Upewnij się, że folder 'static' istnieje w repozytorium!
-if not os.path.exists("static"):
-    os.makedirs("static")
+# USUNIĘTO: if not os.path.exists("static"): os.makedirs("static") - to powodowało błąd
+# Zakładamy, że folder static istnieje w repozytorium (bo dodałeś index.html)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
